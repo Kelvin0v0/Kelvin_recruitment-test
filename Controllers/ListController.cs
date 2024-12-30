@@ -133,35 +133,14 @@ namespace InterviewTest.Controllers
         public IActionResult removeEmployee(Employee rmEmployee)
         {
 
-            var employee = new Employee();
-
             var connectionStringBuilder = new SqliteConnectionStringBuilder() { DataSource = "./SqliteDB.db" };
             using (var connection = new SqliteConnection(connectionStringBuilder.ConnectionString))
             {
                 connection.Open();
 
-                var queryCmd = connection.CreateCommand();
-                queryCmd.CommandText = "SELECT Name, Value FROM Employees WHERE Name = @Name";
-                queryCmd.Parameters.AddWithValue("@Name", rmEmployee.Name);
-           
-                bool employeeFound = false;
-                using (var reader = queryCmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        employee.Name = reader.GetString(0);
-                        employee.Value = reader.GetInt32(1);
-                        employeeFound = true;
-
-                    }
-                }
-                if (employeeFound)
-                {
                     var insertCmd = connection.CreateCommand();
-                    insertCmd.CommandText = "DELETE FROM Employees WHERE Name=@Name AND Value = @Value";
-                    insertCmd.Parameters.AddWithValue("@Name", employee.Name);
-                    insertCmd.Parameters.AddWithValue("@Value", employee.Value);
-
+                    insertCmd.CommandText = "DELETE FROM Employees WHERE Name=@Name";
+                    insertCmd.Parameters.AddWithValue("@Name", rmEmployee.Name);
 
                     int rowsAffected = insertCmd.ExecuteNonQuery();
 
@@ -171,13 +150,9 @@ namespace InterviewTest.Controllers
                     }
                     else
                     {
-                        return StatusCode(500, "Internal server error: Insert Error");
+                        return StatusCode(500, "Internal server error: Delete Error");
                     }
-                }
-                else
-                {
-                    return NotFound();
-                }
+               
             }
         }
 

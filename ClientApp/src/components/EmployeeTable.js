@@ -141,26 +141,25 @@ export const EmployeeTable = () => {
             });
 
             if (response.ok) {
-                setIsEditMode(false);
-                alert('Employee updated successfully!');
                 
-                // Reset form
+                alert('Employee updated successfully!');
+    
             } else {
                 alert('Failed to updated employee. Please try again.');
             }
+            setIsEditMode(false);
         } catch (error) {
             alert('Error: ' + error.message);
         }
-        setEditableEmployee(null); // Reset the editable state
+        setEditableEmployee(null);
         setSaveEmployee(null);
+        
 
     };
 
     const handleDelete = async (employee) => {
         setIsEditMode(true);
-        setEmployees(employees.filter(em =>
-            em.name !== employee.name
-        ));
+       
         const employeeData = {
             name: employee.name,
             value: parseInt(employee.value)
@@ -176,16 +175,20 @@ export const EmployeeTable = () => {
             });
 
             if (response.ok) {
+                setEmployees(employees.filter(em =>
+                    em.name !== employee.name
+                ));
                 
-                setIsEditMode(false);
                 alert('Employee deleted successfully!');
                 // Reset form
             } else {
                 alert('Failed to deleted employee. Please try again.');
             }
+            setIsEditMode(false);
         } catch (error) {
             alert('Error: ' + error.message);
         }
+        
         
     };
    
@@ -231,19 +234,16 @@ export const EmployeeTable = () => {
 
             });;
         }, time);
-        console.log(interval);
+       
         setFetchInterval(interval);
          
     }
     const cancelInterval = () => {
-        console.log(fetchInterval);
-        
         clearInterval(fetchInterval);
         setFetchInterval(null);
         
     }
     useEffect(() => {
-        console.log(isEditMode);
         if (!isEditMode) {
             fetchData(1000);
         } else {
@@ -284,7 +284,7 @@ export const EmployeeTable = () => {
 
                     }
                 </table>
-            <table className='employee-table'>
+                <table className='employee-table'>
             <tr>
                 <th>Name</th>
                 <th>Value</th>

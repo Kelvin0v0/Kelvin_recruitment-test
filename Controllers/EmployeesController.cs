@@ -18,9 +18,10 @@ namespace InterviewTest.Controllers
             using (var connection = new SqliteConnection(connectionStringBuilder.ConnectionString))
             {
                 connection.Open();
+        
 
                 var queryCmd = connection.CreateCommand();
-                queryCmd.CommandText = @"SELECT Name, Value FROM Employees";
+                queryCmd.CommandText = @"SELECT Name, Value FROM Employees ORDER BY Name";
                 using (var reader = queryCmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -36,5 +37,8 @@ namespace InterviewTest.Controllers
 
             return employees;
         }
+
+
+        
     }
 }
