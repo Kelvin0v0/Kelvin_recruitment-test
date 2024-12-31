@@ -213,7 +213,36 @@ namespace InterviewTest.Controllers
             return totalSumABC;
 
         }
-     
+
+        [HttpGet]
+        [Route("ListNameLarge")]
+        public List<Employee> ListNameLarge()
+        {
+            List<Employee> totalSumABC = new List<Employee>();
+
+            var connectionStringBuilder = new SqliteConnectionStringBuilder() { DataSource = "./SqliteDB.db" };
+            using (var connection = new SqliteConnection(connectionStringBuilder.ConnectionString))
+            {
+                connection.Open();
+                var queryCmd = connection.CreateCommand();
+                queryCmd.CommandText = @"SELECT Name, Value FROM Employees WHERE SUBSTR(Name, 1, 1) IN ('A', 'B', 'C') AND Value >= 11171 ORDER BY Name";
+                using (var reader = queryCmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        totalSumABC.Add(new Employee
+                        {
+                            Name = reader.GetString(0),
+                            Value = reader.GetInt32(1)
+                        });
+
+                    }
+                }
+            }
+            return totalSumABC;
+
+        }
+
 
     }
 }

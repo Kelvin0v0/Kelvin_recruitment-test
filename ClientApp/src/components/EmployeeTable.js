@@ -5,64 +5,29 @@ import './EmployeeTable.css';
 function AddEmployee(props) {
     const [employeeName, setEmployeeName] = useState('');
     const [employeeValue, setEmployeeValue] = useState('');
-   
-    // Handle form submit
-    const handleSubmit = async (e) => {
-        e.preventDefault();
 
-        // Basic validation
-        if (!employeeName || !employeeValue) {
-            alert('Please provide both name and value.');
-            return;
-        }
-        if (props.check(employeeName)) {
-            alert('Name Already Exists');
-            return;
-        }
-
-  
+    useEffect(() => {
+            setEmployeeName('');
+            setEmployeeValue('');
         
-        const employeeData = {
-            name: employeeName,
-            value: parseInt(employeeValue)
-        };
+    },[props.isEditing])
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        props.submit(employeeName, employeeValue);
+        setEmployeeName('');
+        setEmployeeValue('');
 
-        try {
-            const response = await fetch('List/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(employeeData)
-            });
-
-            if (response.ok) {
-               
-                alert('Employee added successfully!');
-                // Reset form
-                setEmployeeName('');
-                setEmployeeValue('');
-                
-            } else {
-                alert('Failed to add employee. Please try again.');
-            }
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
-    };
+    }
+    
     const handleChange = (e) => {
         const value = e.replace(/[^a-zA-Z]/ig, '');
-        // Use regex to allow only alphabetic characters
-
         setEmployeeName(value);
-
-       
     };
     return (
         <div>
-            
+
             <form onSubmit={handleSubmit}>
-            <h2>Add New Employee</h2>
+                <h2>Add New Employee</h2>
                 <div>
                     <label>Employee Name:</label>
                     <input
@@ -85,6 +50,7 @@ function AddEmployee(props) {
         </div>
     );
 }
+
 export const EmployeeTable = () => {
     const [employees, setEmployees] = useState([]);
     const [error, setError] = useState();
@@ -92,24 +58,69 @@ export const EmployeeTable = () => {
     const [editableEmployee, setEditableEmployee] = useState(null);
     const [saveEmployee, setSaveEmployee] = useState(null);
     const [totalSum, setTotalSum] = useState([]);
+    const [largeABC, setLargeABC] = useState([]);
     const [isEditMode, setIsEditMode] = useState(false);
     const [fetchInterval, setFetchInterval] = useState(null);
-    const handleEdit = (employee) => {;
+    const handleEdit = (employee) => {
+        ;
         setEditableEmployee({ ...employee }); // Set the employee being edited
         setSaveEmployee({ ...employee });
         setIsEditMode(true);
     };
 
+    const addEmployee = (name, value) => {
+
+        if (!name || !value) {
+            alert('Please provide both name and value.');
+            return;
+        }
+        if (checkName(name)) {
+            alert('Name Already Exists');
+            return;
+        }
+        const addEmployees = [...employees, { name, value }].sort((a, b) => a.name.localeCompare(b.name));
+        setEmployees(addEmployees);
+        fetching('add', {
+            name: name,
+            value: parseInt(value)
+        }, 'POST');
+        if (isEditMode) {
+            setIsEditMode(false);
+            setEditableEmployee(null);
+            setSaveEmployee(null);
+        }
+
+    };
+    const fetching = async (action,employeeData,method) => {
+        try {
+            const response = await fetch('List/'+action, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(employeeData)
+            });
+            const actionName = action.includes('modify') ? 'modify' : action;
+            if (response.ok) {
+                
+                alert('Employee ' + actionName + ' successfully!');
+                
+         
+            } else {
+                alert('Failed to ' + actionName +' employee. Please try again.');
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
     const checkName = (name) => {
         return employees.find(e => e.name === name);
     }
     const handleChange = (e, field) => {
         const { value } = e.target;
-       
-
         setSaveEmployee((prev) => ({
             ...prev,
-            [field]: field==='name'?value.replace(/[^a-zA-Z]/ig,''):value,
+            [field]: field === 'name' ? value.replace(/[^a-zA-Z]/ig, '') : value,
         }));
     };
 
@@ -123,79 +134,41 @@ export const EmployeeTable = () => {
             alert('Update Action: Name Already Exists');
             return;
         }
-        setEmployees(employees => employees.map(e => e.name === editableEmployee.name ?{ ...e, name: employee.name, value: employee.value } :e ));
-       
-        const employeeData = {
+        setEmployees(employees => employees.map(e => e.name === editableEmployee.name ? { ...e, name: employee.name, value: employee.value } : e));
+
+        
+        fetching(`modify/${editableEmployee.name}`, {
             name: employee.name,
             value: parseInt(employee.value)
-        };
-        try { 
-
-            
-            const response = await fetch(`List/modify/${editableEmployee.name}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(employeeData)
-            });
-
-            if (response.ok) {
-                
-                alert('Employee updated successfully!');
-    
-            } else {
-                alert('Failed to updated employee. Please try again.');
-            }
-            setIsEditMode(false);
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
+        }, 'PUT');
+               
+        setIsEditMode(false);
         setEditableEmployee(null);
         setSaveEmployee(null);
-        
+
 
     };
 
     const handleDelete = async (employee) => {
-        setIsEditMode(true);
-       
+
         const employeeData = {
             name: employee.name,
             value: parseInt(employee.value)
         };
-        try {
-            
-            const response = await fetch(`List/remove`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(employeeData)
-            });
 
-            if (response.ok) {
-                setEmployees(employees.filter(em =>
-                    em.name !== employee.name
-                ));
-                
-                alert('Employee deleted successfully!');
-                // Reset form
-            } else {
-                alert('Failed to deleted employee. Please try again.');
-            }
-            setIsEditMode(false);
-        } catch (error) {
-            alert('Error: ' + error.message);
-        }
-        
-        
+         fetching(`remove`, employeeData, 'DELETE');
+         setIsEditMode(false);
     };
-   
 
-    const fetchData = (time) => {
-       
-        const interval = setInterval(() => {
+
+    const cancelInterval = () => {
+        clearInterval(fetchInterval);
+        setFetchInterval(null);
+
+    }
+    useEffect(() => {
+        if (!isEditMode) {
+            const interval = setInterval(() => {
                 fetch('/Employees')
                     .then(response => {
                         if (!response.ok) {
@@ -219,50 +192,99 @@ export const EmployeeTable = () => {
                 })
                     .then(totalSum => {
                         setTotalSum(totalSum);
-                       
+
 
                     })
                     .catch(error => {
                         setError(error.message);
                     });
 
-            fetch('/List/ListIncrement', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                fetch('/List/ListNameLarge').then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                    .then(largeABC => {
+                        setLargeABC(largeABC);
 
-            });;
-        }, time);
-       
-        setFetchInterval(interval);
-         
-    }
-    const cancelInterval = () => {
-        clearInterval(fetchInterval);
-        setFetchInterval(null);
-        
-    }
-    useEffect(() => {
-        if (!isEditMode) {
-            fetchData(1000);
+
+                    })
+                    .catch(error => {
+                        setError(error.message);
+                    });
+                
+                    fetch('/List/ListIncrement', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+
+                    });
+                
+
+
+            }, 1000);
+
+            setFetchInterval(interval);
         } else {
             cancelInterval();
         }
-            
+
         return () => {
-            cancelInterval(); 
+            cancelInterval();
         };
 
-    }, [isEditMode]); 
+    }, [isEditMode]);
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
+    
     return (
         <>
-            <AddEmployee check={checkName} />
+            {isEditMode?(<p>Editing... </p>):(<></>)}
+            <AddEmployee check={checkName} submit={addEmployee} isEditing={isEditMode} />
             <div className="panel">
-                <table className='employee-table'>
+                <div><table className='employee-table'>
+                    <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                        <th>Action</th>
+                    </tr>
+                    {employees?.map((employee) => (
+                        <tr>
+                            {editableEmployee?.name === employee.name ? (
+                                <>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            value={saveEmployee.name || ''}
+                                            onChange={(e) => handleChange(e, 'name')}
+                                            placeholder={employee.name} />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            value={saveEmployee.value || ''}
+                                            onChange={(e) => handleChange(e, 'value')}
+                                            placeholder={employee.value}
+                                        />
+                                    </td>
+                                    <td><button onClick={() => handleSave(saveEmployee)}>Save</button>
+                                        <button onClick={() => handleDelete(employee)}>Delete</button></td></>
+                            ) : (
+                                <><td>{employee.name}</td>
+                                    <td>{employee.value}</td>
+                                    <td><button onClick={() => handleEdit(employee)}>Edit</button></td></>
+
+                            )}
+
+                        </tr>
+
+                    ))}
+                </table></div>
+                
+                <div>{totalSum.length !== 0 ? (<table className='employee-table'>
                     <thead>
                         <tr>
                             <th>Summed Names begin With</th>
@@ -270,70 +292,37 @@ export const EmployeeTable = () => {
                         </tr>
 
                     </thead>
-                    {totalSum?.map( s => (
-                       
-                            
-                             <tbody>
+                    {totalSum?.map(s => (
+                        <tbody>
                             <tr>
                                 <td>{s.name}</td>
                                 <td>{s.value}</td>
                             </tr>
                         </tbody>
 
-                    ) )
+                    ))
 
                     }
-                </table>
-                <table className='employee-table'>
-            <tr>
-                <th>Name</th>
-                <th>Value</th>
-                <th>Action</th>
-            </tr>
-            {employees?.map((employee) => (
-                <tr>
+                </table>) : (<table></table>)}
+                    {largeABC ? (
+                        <table className='employee-table'>
+                            <tr>
+                                <th>Name</th>
+                                <th>Value >= 11171</th>
+                            </tr>
+                            {largeABC.map((em) => (
+                                <tr>
+                                    <td>{em.name}</td>
+                                    <th>{em.value}</th>
+                                </tr>
+                            ))}
+                        </table>
 
-                    <td>
-                        { 
-                            editableEmployee?.name === employee.name ? (
-                            <input
-                                type="text"
-                                value={saveEmployee.name || ''}
-                                onChange={(e) => handleChange(e, 'name')}
-                                placeholder={employee.name}
-                            />
-                        ) : (
-                            employee.name
-                        )}
-                    </td>
-
-                    {/* Editable Value */}
-                    <td>
-                        {editableEmployee?.name === employee.name ? (
-                            <input
-                                type="number"
-                                value={saveEmployee.value || ''}
-                                onChange={(e) => handleChange(e, 'value')}
-                                placeholder={employee.value}
-                            />
-                        ) : (
-                            employee.value
-                        )}
-                    </td>
-                    <td>
-                        {editableEmployee?.name === employee.name ? (
-                            <button onClick={() => handleSave(saveEmployee)}>Save</button>
-                        ) : (
-                            <button onClick={() => handleEdit(employee)}>Edit</button>
-                        )}
-                        <button onClick={() => handleDelete(employee)}>Delete</button>
-                    </td>
-                    </tr>
-
-            ))}
-                </table>
+                    ) : (<></>)
+                    }</div>
+                
                
-            
+
             </div>
         </>
     );
